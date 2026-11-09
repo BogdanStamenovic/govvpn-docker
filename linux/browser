@@ -1,0 +1,4 @@
+#!/bin/sh
+# A separate Chrome profile whose only network is the VPN container's SOCKS port.
+# Needed because the platform's login page is hard-coded to https://10.68.6.58/auth.
+exec google-chrome-stable --user-data-dir="$HOME/.cache/govvpn-chrome" --proxy-server=socks5://127.0.0.1:1080 --no-first-run https://10.68.6.58/gui/

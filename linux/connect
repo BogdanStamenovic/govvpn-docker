@@ -1,0 +1,14 @@
+#!/bin/sh
+# Usage: linux/connect USERNAME. It asks for the password from the eUprava SMS.
+# Ctrl+C disconnects. The stopped container stays until the next run so `docker logs govvpn` can show why it ended.
+# Published on 127.0.0.1 only: 8443->platform https, 2222->platform ssh, 1080->SOCKS into the VPN, 8888->their proxy
+[ -n "$1" ] || { echo "usage: $0 USERNAME   (e.g. ime.prezime)" >&2; exit 2; }
+here=$(dirname "$0")/..
+docker image inspect govvpn >/dev/null 2>&1 || docker build -t govvpn "$here" || exit 1
+docker rm -f govvpn >/dev/null 2>&1
+exec docker run -it --name govvpn \
+  --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp --tmpfs /home/vpn:uid=1000 \
+  -p 127.0.0.1:8443:8443 -p 127.0.0.1:2222:2222 -p 127.0.0.1:1080:1080 -p 127.0.0.1:8888:8888 \
+  govvpn openconnect --user="$1" \
+  --script-tun --script "ocproxy -g -D 1080 -L 8443:10.68.6.58:443 -L 2222:10.68.6.58:22 -L 8888:10.36.1.162:8888" \
+  https://gw.uzzpro.gov.rs/sqlatos
